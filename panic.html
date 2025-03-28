@@ -6,7 +6,7 @@
     <title>ProtectPath - Shake-to-Panic</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
-
+        
         body {
             font-family: 'Poppins', sans-serif;
             text-align: center;
@@ -18,7 +18,7 @@
             height: 100vh;
             background: linear-gradient(135deg, #0057A7, #87CEEB);
         }
-
+        
         .container {
             background: rgba(255, 255, 255, 0.2);
             padding: 30px;
@@ -28,7 +28,7 @@
             text-align: center;
             animation: fadeIn 1s ease-in-out;
         }
-
+        
         .button {
             display: block;
             width: 220px;
@@ -43,18 +43,18 @@
             box-shadow: 0 0 10px rgba(255, 0, 100, 0.7);
             transition: all 0.3s ease-in-out;
         }
-
+        
         .button:hover {
             background: linear-gradient(to right, #ff5e8a, #ff2d55);
             transform: scale(1.1);
         }
-
+        
         @keyframes shake {
             0%, 100% { transform: translate(0, 0); }
             10%, 30%, 50%, 70%, 90% { transform: translate(-10px, 0); }
             20%, 40%, 60%, 80% { transform: translate(10px, 0); }
         }
-
+        
         .shake {
             animation: shake 2s ease-in-out;
         }
@@ -77,12 +77,21 @@
                 navigator.geolocation.getCurrentPosition((position) => {
                     const latitude = position.coords.latitude;
                     const longitude = position.coords.longitude;
-                    const whatsappMessage = `🚨 URGENT! I need help. My live location: https://www.google.com/maps?q=${latitude},${longitude}`;
+                    const whatsappMessage = `🚨🚨 ProtectPath Alert! 🚨  
+📍 Emergency Location URGENT! I need help. My live location: https://www.google.com/maps?q=${latitude},${longitude}`;
                     
-                    const phoneNumber = "YOUR_WHATSAPP_NUMBER"; // Replace with an actual number
-                    const whatsappLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(whatsappMessage)}`;
-                    
-                    window.open(whatsappLink, "_blank");
+                    const contactData = JSON.parse(localStorage.getItem("trustedContacts"));
+
+                    if (!contactData || !contactData.relatives || contactData.relatives.length === 0) {
+                        alert("❌ No trusted contact found. Please add at least one trusted contact!");
+                        return;
+                    }
+
+                    contactData.relatives.forEach(contact => {
+                        const phoneNumber = contact.phone.replace(/\D/g, "");
+                        const whatsappLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+                        window.open(whatsappLink, "_blank");
+                    });
                 }, () => {
                     alert("⚠️ Unable to access location. Please enable GPS.");
                 });
@@ -94,7 +103,6 @@
         function triggerPanic() {
             panicButton.classList.add("shake");
             
-            // Show confirmation prompt
             const userConfirmed = confirm("🚨 Panic Activated! Do you want to send your live location?");
             
             if (userConfirmed) {
@@ -106,9 +114,7 @@
             setTimeout(() => panicButton.classList.remove("shake"), 2000);
         }
 
-        panicButton.addEventListener("click", () => {
-            triggerPanic();
-        });
+        panicButton.addEventListener("click", triggerPanic);
 
         window.addEventListener("devicemotion", (event) => {
             const { x, y, z } = event.accelerationIncludingGravity || {};
