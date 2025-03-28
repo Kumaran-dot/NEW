@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProtectPath - Journey Tracker</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #0057A7, #87CEEB);
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        h2 {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            display: block;
+            width: 220px;
+            padding: 15px;
+            margin: 10px auto;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(to right, #ff2d55, #ff5e8a);
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 0, 100, 0.7);
+            transition: all 0.3s ease-in-out;
+        }
+
+        button:hover {
+            background: linear-gradient(to right, #ff5e8a, #ff2d55);
+            transform: scale(1.1);
+        }
+
+        select {
+            display: none;
+            width: 220px;
+            padding: 10px;
+            margin: 10px auto;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            text-align: center;
+        }
+
+        #selectedTime {
+            font-size: 18px;
+            color: white;
+            margin-top: 10px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>🛣️ ProtectPath - Journey Tracker 🛣️</h2>
+
+        <button onclick="toggleTimeSelect()">Set Time Limit</button>
+        <select id="timeSelect" onchange="setTimeLimit()">
+            <option value="">Select Time</option>
+            <option value="10">10 min</option>
+            <option value="20">20 min</option>
+            <option value="30">30 min</option>
+            <option value="40">40 min</option>
+            <option value="50">50 min</option>
+        </select>
+
+        <p id="selectedTime"></p>
+
+        <button onclick="startJourney()">Start Journey</button>
+        <button onclick="endJourney()">End Journey</button>
+    </div>
+
+    <script>
+        let selectedTime = null;
+        let intervalId = null;
+        let liveTrackingUrl = "";
+
+        function toggleTimeSelect() {
+            document.getElementById("timeSelect").style.display = "block";
+        }
+
+        function setTimeLimit() {
+            selectedTime = parseInt(document.getElementById("timeSelect").value);
+            if (selectedTime) {
+                document.getElementById("selectedTime").innerText = "⏳ Selected Time Limit: " + selectedTime + " min";
+            }
+        }
+
+        function sendTrackingLink() {
+            const contactData = JSON.parse(localStorage.getItem("trustedContacts"));
+
+            if (!contactData || !contactData.relatives || contactData.relatives.length === 0) {
+                alert("❌ No trusted contact found. Please add at least one trusted contact!");
+                return;
+            }
+
+            // Get the first trusted relative's phone number
+            const trustedNumber = contactData.relatives[0].phone.replace(/\D/g, ""); // Remove any non-numeric characters
+
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        let lat = position.coords.latitude;
+                        let lon = position.coords.longitude;
+
+                        // Generate Google Maps real-time tracking link
+                        liveTrackingUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=walking`;
+
+                        let message = `🔔 ProtectPath Live Tracking  
+🚶‍♂️ Journey Started!  
+📍 Follow my real-time location: ${liveTrackingUrl}  
+⏳ Checking in every ${selectedTime} min  
+🛑 If I don't end my journey, please check on me!`;
+
+                        let whatsappUrl = `https://api.whatsapp.com/send?phone=${trustedNumber}&text=${encodeURIComponent(message)}`;
+                        window.open(whatsappUrl, "_blank");
+                    },
+                    function(error) {
+                        alert("❌ Location access denied. Please enable GPS!");
+                    }
+                );
+            } else {
+                alert("❌ Geolocation is not supported by your browser.");
+            }
+        }
+
+        function startJourney() {
+            if (!selectedTime) {
+                alert("⚠️ Please set a time limit before starting the journey!");
+                return;
+            }
+
+            alert("🚀 Journey Started! Sending live tracking link.");
+            sendTrackingLink(); // Send initial tracking link
+
+            // Repeat sending tracking link based on the selected time
+            intervalId = setInterval(sendTrackingLink, selectedTime * 60000);
+        }
+
+        function endJourney() {
+            alert("🛑 Journey Ended! No more location updates.");
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        }
+    </script>
+
+</body>
+</html>
